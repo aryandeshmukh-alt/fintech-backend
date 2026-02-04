@@ -1,0 +1,151 @@
+{
+    "info": {
+        "name": "Fintech Transaction Risk Engine - Phase 1 (Auth)",
+        "description": "Phase 1 - Authentication & Session Management. Testing User Registration, Login, and Logout.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Register User",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"user\": {\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\"\n  }\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/auth/register",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "auth",
+                        "register"
+                    ]
+                },
+                "description": "Register a new user"
+            },
+            "response": []
+        },
+        {
+            "name": "Login",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/auth/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "auth",
+                        "login"
+                    ]
+                },
+                "description": "Login and get session cookie"
+            },
+            "response": []
+        },
+        {
+            "name": "Current User (Me)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/auth/me",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "auth",
+                        "me"
+                    ]
+                },
+                "description": "Check current authenticated user status"
+            },
+            "response": []
+        },
+        {
+            "name": "Logout",
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/auth/logout",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "auth",
+                        "logout"
+                    ]
+                },
+                "description": "Clear session cookie"
+            },
+            "response": []
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3000"
+        },
+        {
+            "key": "api_version",
+            "value": "v1"
+        }
+    ]
+}

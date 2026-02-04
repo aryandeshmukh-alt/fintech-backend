@@ -1,0 +1,131 @@
+{
+    "info": {
+        "name": "Fintech Transaction Risk Engine - Phase 3 & 4 (Transactions)",
+        "description": "Phase 3/4 - Transaction Ingestion & Risk Scoring. Testing Transaction creation, listing, and risk rules.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Create Transaction (Normal)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"transaction\": {\n    \"amount\": 500.0,\n    \"device_id\": \"device_alpha_123\"\n  }\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/transactions",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "transactions"
+                    ]
+                },
+                "description": "Submit a normal transaction. Should be ALLOWED."
+            },
+            "response": []
+        },
+        {
+            "name": "Create Transaction (High Amount - Risk)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"transaction\": {\n    \"amount\": 150000.0,\n    \"device_id\": \"device_alpha_123\"\n  }\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/transactions",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "transactions"
+                    ]
+                },
+                "description": "Submit a high amount transaction. Should be FLAGGED (First transaction > 100k)."
+            },
+            "response": []
+        },
+        {
+            "name": "Create Transaction (Untrusted Device)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"transaction\": {\n    \"amount\": 1000.0,\n    \"device_id\": \"unknown_device_789\"\n  }\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/transactions",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "transactions"
+                    ]
+                },
+                "description": "Submit from a different device. Should increase risk."
+            },
+            "response": []
+        },
+        {
+            "name": "List Transactions",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/transactions",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "transactions"
+                    ]
+                },
+                "description": "View all transactions made by the logged-in user."
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3000"
+        },
+        {
+            "key": "api_version",
+            "value": "v1"
+        }
+    ]
+}

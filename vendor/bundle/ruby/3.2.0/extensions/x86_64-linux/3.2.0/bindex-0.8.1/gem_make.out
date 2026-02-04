@@ -1,0 +1,18 @@
+current directory: /home/aryan/Desktop/fintech-backend/vendor/bundle/ruby/3.2.0/gems/bindex-0.8.1/ext/skiptrace
+/home/aryan/.rbenv/versions/3.2.9/bin/ruby extconf.rb
+creating Makefile
+
+current directory: /home/aryan/Desktop/fintech-backend/vendor/bundle/ruby/3.2.0/gems/bindex-0.8.1/ext/skiptrace
+make DESTDIR\= sitearchdir\=./.gem.20260204-37397-iq4o8y sitelibdir\=./.gem.20260204-37397-iq4o8y clean
+
+current directory: /home/aryan/Desktop/fintech-backend/vendor/bundle/ruby/3.2.0/gems/bindex-0.8.1/ext/skiptrace
+make DESTDIR\= sitearchdir\=./.gem.20260204-37397-iq4o8y sitelibdir\=./.gem.20260204-37397-iq4o8y
+compiling cruby.c
+linking shared-object skiptrace/internal/cruby.so
+
+current directory: /home/aryan/Desktop/fintech-backend/vendor/bundle/ruby/3.2.0/gems/bindex-0.8.1/ext/skiptrace
+make DESTDIR\= sitearchdir\=./.gem.20260204-37397-iq4o8y sitelibdir\=./.gem.20260204-37397-iq4o8y install
+/usr/bin/install -c -m 0755 cruby.so ./.gem.20260204-37397-iq4o8y/skiptrace/internal
+
+current directory: /home/aryan/Desktop/fintech-backend/vendor/bundle/ruby/3.2.0/gems/bindex-0.8.1/ext/skiptrace
+make DESTDIR\= sitearchdir\=./.gem.20260204-37397-iq4o8y sitelibdir\=./.gem.20260204-37397-iq4o8y clean

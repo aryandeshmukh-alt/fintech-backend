@@ -1,0 +1,112 @@
+{
+    "info": {
+        "name": "Fintech Transaction Risk Engine - Phase 5 (Enhanced)",
+        "description": "Phase 5 - Enhanced Transaction Handling with Payment Methods, Hashing, and Pagination.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Create Transaction (With UPI & Hash)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"transaction\": {\n    \"amount\": 750.0,\n    \"device_id\": \"mac_id_address_00_15_5d\",\n    \"payment_method\": \"upi\"\n  }\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/transactions",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "transactions"
+                    ]
+                },
+                "description": "Submit txn with specific payment method and device ID (which will be hashed)."
+            },
+            "response": []
+        },
+        {
+            "name": "Create Transaction (Card)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"transaction\": {\n    \"amount\": 300.0,\n    \"device_id\": \"mac_id_address_00_15_5d\",\n    \"payment_method\": \"card\"\n  }\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/transactions",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "transactions"
+                    ]
+                },
+                "description": "Submit txn with card payment."
+            },
+            "response": []
+        },
+        {
+            "name": "List Transactions (Paginated with Stats)",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/{{api_version}}/transactions?page=1&per_page=10",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "{{api_version}}",
+                        "transactions"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1"
+                        },
+                        {
+                            "key": "per_page",
+                            "value": "10"
+                        }
+                    ]
+                },
+                "description": "View paginated history and summary stats."
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3000"
+        },
+        {
+            "key": "api_version",
+            "value": "v1"
+        }
+    ]
+}

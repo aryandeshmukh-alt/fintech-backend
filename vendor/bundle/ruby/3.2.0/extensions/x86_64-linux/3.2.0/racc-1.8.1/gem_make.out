@@ -1,0 +1,18 @@
+current directory: /home/aryan/Desktop/fintech-backend/vendor/bundle/ruby/3.2.0/gems/racc-1.8.1/ext/racc/cparse
+/home/aryan/.rbenv/versions/3.2.9/bin/ruby extconf.rb
+creating Makefile
+
+current directory: /home/aryan/Desktop/fintech-backend/vendor/bundle/ruby/3.2.0/gems/racc-1.8.1/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20260204-37397-kxyna1 sitelibdir\=./.gem.20260204-37397-kxyna1 clean
+
+current directory: /home/aryan/Desktop/fintech-backend/vendor/bundle/ruby/3.2.0/gems/racc-1.8.1/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20260204-37397-kxyna1 sitelibdir\=./.gem.20260204-37397-kxyna1
+compiling cparse.c
+linking shared-object racc/cparse.so
+
+current directory: /home/aryan/Desktop/fintech-backend/vendor/bundle/ruby/3.2.0/gems/racc-1.8.1/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20260204-37397-kxyna1 sitelibdir\=./.gem.20260204-37397-kxyna1 install
+/usr/bin/install -c -m 0755 cparse.so ./.gem.20260204-37397-kxyna1/racc
+
+current directory: /home/aryan/Desktop/fintech-backend/vendor/bundle/ruby/3.2.0/gems/racc-1.8.1/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20260204-37397-kxyna1 sitelibdir\=./.gem.20260204-37397-kxyna1 clean

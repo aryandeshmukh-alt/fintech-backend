@@ -9,6 +9,15 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       get "health", to: "health#check"
+
+      namespace :auth do
+        post "register", to: "registrations#create"
+        post "login", to: "sessions#create"
+        delete "logout", to: "sessions#destroy"
+        get "me", to: "sessions#show"
+      end
+
+      resources :transactions, only: [:create, :index]
     end
   end
 
