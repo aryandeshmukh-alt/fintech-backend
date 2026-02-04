@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content='text/html; charset=UTF-8' http-equiv='content-type' />
+  </head>
+  <body>
+    <h1>Your Weekly Transaction Summary</h1>
+    <p>Hello <%= @user.first_name %>,</p>
+    <p>Here is a summary of your activity from <%= @start_date.strftime("%B %d") %> to today.</p>
+
+    <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0;">
+      <h3>Summary Stats</h3>
+      <p><strong>Total Transactions:</strong> <%= @transactions.count %></p>
+      <p><strong>Blocked/Flagged:</strong> <%= @transactions.where.not(status: :success).count %></p>
+      <p><strong>Average Amount:</strong> <%= number_to_currency(@stats.avg_amount) %></p>
+    </div>
+
+    <h3>Recent Activity</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f8f9fa;">
+          <th style="padding: 8px; border: 1px solid #dee2e6;">Date</th>
+          <th style="padding: 8px; border: 1px solid #dee2e6;">Amount</th>
+          <th style="padding: 8px; border: 1px solid #dee2e6;">Method</th>
+          <th style="padding: 8px; border: 1px solid #dee2e6;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @transactions.order(created_at: :desc).limit(10).each do |txn| %>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #dee2e6;"><%= txn.created_at.strftime("%b %d") %></td>
+            <td style="padding: 8px; border: 1px solid #dee2e6;"><%= number_to_currency(txn.amount) %></td>
+            <td style="padding: 8px; border: 1px solid #dee2e6;"><%= txn.payment_method.upcase %></td>
+            <td style="padding: 8px; border: 1px solid #dee2e6;"><%= txn.status.upcase %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <p>If you see any transactions you don't recognize, please provide feedback via the dashboard.</p>
+    
+    <p>Best regards,<br>Fintech Bank</p>
+  </body>
+</html>

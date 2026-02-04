@@ -17,7 +17,9 @@ Rails.application.routes.draw do
         get "me", to: "sessions#show"
       end
 
-      resources :transactions, only: [:create, :index]
+      resources :transactions, only: [:index, :create] do
+        post 'feedback', to: 'fraud_feedbacks#create'
+      end
     end
   end
 

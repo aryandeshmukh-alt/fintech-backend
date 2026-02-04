@@ -54,13 +54,16 @@ class TransactionRiskEvaluator
     end
 
     # Determine status base on risk score
-    status = if @risk_score > 70
-               :blocked
-             elsif @risk_score >= 30
-               :flagged
-             else
-               :success
-             end
+    # Determine status
+    if @risk_score >= 70
+      @transaction.blocked!
+      TransactionMailer.blocked_alert(@transaction).deliver_later
+      status = :blocked
+    elsif @risk_score >= 30
+      status = :flagged
+    else
+      status = :success
+    end
 
     # Save evaluation
     FraudEvaluation.create!(

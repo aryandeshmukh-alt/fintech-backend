@@ -1,0 +1,8 @@
+# Recurring tasks for Solid Queue
+# Documentation: https://github.com/basecamp/solid_queue
+
+default:
+  weekly_reports:
+    class: WeeklyReportJob
+    # Every Monday at 8 AM
+    schedule: "0 8 * * 1"

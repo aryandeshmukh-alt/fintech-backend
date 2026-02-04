@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content='text/html; charset=UTF-8' http-equiv='content-type' />
+  </head>
+  <body>
+    <h1>Security Alert: Transaction Blocked</h1>
+    <p>Hello <%= @user.first_name %>,</p>
+    <p>For your protection, our risk engine has blocked a transaction that appeared highly unusual.</p>
+    
+    <div style="background: #f8d7da; padding: 15px; border-radius: 5px; margin: 20px 0;">
+      <p><strong>Amount:</strong> <%= number_to_currency(@transaction.amount) %></p>
+      <p><strong>Payment Method:</strong> <%= @transaction.payment_method.upcase %></p>
+      <p><strong>Date:</strong> <%= @transaction.created_at.strftime("%B %d, %Y at %H:%M") %></p>
+      <p><strong>Status:</strong> BLOCKED</p>
+    </div>
+
+    <p>If this was you and you believe this is an error, please log in to your dashboard and provide feedback on this transaction so we can improve our detection.</p>
+    
+    <p>Stay safe,<br>Fintech Security Team</p>
+  </body>
+</html>

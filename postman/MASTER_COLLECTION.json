@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "Fintech Transaction Risk Engine - MASTER COLLECTION",
-        "description": "Complete collection for Authentication, Transaction Ingestion, Risk Scoring, and History.",
+        "description": "Complete collection for Authentication, Transaction Ingestion, Risk Scoring, History, and Feedback Loop.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
@@ -184,6 +184,36 @@
                                 }
                             ]
                         }
+                    }
+                },
+                {
+                    "name": "Submit Feedback on Transaction",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"feedback\": {\n    \"is_accurate\": true,\n    \"user_feedback\": \"This was indeed a high value purchase I made.\"\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/transactions/{{transaction_id}}/feedback",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "transactions",
+                                "{{transaction_id}}",
+                                "feedback"
+                            ]
+                        },
+                        "description": "Allows user to confirm or refute a fraud decision."
                     }
                 }
             ]

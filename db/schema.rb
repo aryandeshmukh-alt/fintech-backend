@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_04_125500) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_04_142000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -48,10 +48,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_04_125500) do
 
   create_table "fraud_evaluations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.boolean "is_accurate"
     t.integer "risk_score", null: false
     t.text "rules_triggered"
     t.uuid "transaction_id", null: false
     t.datetime "updated_at", null: false
+    t.text "user_feedback"
+    t.index ["is_accurate"], name: "index_fraud_evaluations_on_is_accurate"
     t.index ["transaction_id"], name: "index_fraud_evaluations_on_transaction_id"
   end
 
@@ -93,17 +96,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_04_125500) do
     t.index ["payment_method"], name: "index_transactions_on_payment_method"
     t.index ["status"], name: "index_transactions_on_status"
     t.index ["user_id"], name: "index_transactions_on_user_id"
-  end
-
-  create_table "user_behaviors", force: :cascade do |t|
-    t.decimal "avg_amount"
-    t.datetime "created_at", null: false
-    t.string "last_device_id"
-    t.integer "txn_count_last_1h"
-    t.integer "txn_count_last_24h"
-    t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["user_id"], name: "index_user_behaviors_on_user_id"
   end
 
   create_table "user_transaction_stats", force: :cascade do |t|

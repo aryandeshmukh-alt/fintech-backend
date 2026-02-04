@@ -1,0 +1,15 @@
+Security Alert: Transaction Blocked
+
+Hello <%= @user.first_name %>,
+
+For your protection, our risk engine has blocked a transaction that appeared highly unusual.
+
+Amount: <%= number_to_currency(@transaction.amount) %>
+Payment Method: <%= @transaction.payment_method.upcase %>
+Date: <%= @transaction.created_at.strftime("%B %d, %Y at %H:%M") %>
+Status: BLOCKED
+
+If this was you and you believe this is an error, please log in to your dashboard and provide feedback on this transaction so we can improve our detection.
+
+Stay safe,
+Fintech Security Team

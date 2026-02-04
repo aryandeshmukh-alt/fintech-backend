@@ -1,212 +1,136 @@
-# Fintech Transaction Risk Engine
+# Fintech Backend: Transaction Risk & Fraud Detection Engine
 
-**A production-grade backend system for real-time fraud detection and transaction risk scoring**
+A secure, high-performance Ruby on Rails API for real-time transaction processing, automated risk assessment, and fraud detection.
 
-## Overview
+## Technical Stack
 
-This is a comprehensive Ruby on Rails API backend that implements a real-world fintech transaction processing system with intelligent fraud detection. Designed with inspiration from systems used by Visa, Stripe, and Razorpay.
+- **Framework:** Ruby on Rails 8.1.2 (API Only)
+- **Database:** PostgreSQL with UUID support
+- **Authentication:** Secure Cookie-based Sessions (HttpOnly/SameSite)
+- **Background Jobs:** SolidQueue (Rails 8 defaults)
+- **Security:** bcrypt, SHA-256 device hashing, industry-standard SQL injection protection
 
-### What It Does
-- User registration, authentication, and session management
-- Transaction processing with risk evaluation
-- Real-time fraud detection using configurable rules
-- Async event-driven architecture with background jobs
-- Complete audit trail for compliance
-- Role-based access control (RBAC)
-- Rate limiting and abuse prevention
+## Prerequisites
 
-### Real-World Applications
-- Banking platforms
-- Investment managers
-- Payment processors
-- Fintech apps
-- Fraud analysis systems
+- Ruby 3.2.0 or higher
+- PostgreSQL 14 or higher
+- Bundler gem
 
-## Technology Stack
+## Getting Started
 
-| Component | Technology |
-|-----------|------------|
-| **Framework** | Rails 8.1.2 (API-only) |
-| **Database** | PostgreSQL 16 |
-| **Job Queue** | Sidekiq + Redis |
-| **Authentication** | HttpOnly Cookies (Session-based) |
-| **Authorization** | Pundit (RBAC) |
-| **Rate Limiting** | Rack Attack |
-| **Testing** | RSpec |
-| **Documentation** | Postman Collections |
-
-## Project Phases
-
-```
-Phase 0 ✅ → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 → Phase 8
-Foundation | Auth  | Users    | Txns     | Risk     | Async   | Logs   | Security| Tests
-```
-
-### Phase 0: Foundation & Sanity Check ✅
-- [x] Rails API project setup
-- [x] PostgreSQL connection
-- [x] Health check endpoint
-- [x] Environment configuration
-
-### Phase 1: Authentication (Next)
-- [ ] User model with password hashing
-- [ ] Registration endpoint
-- [ ] Login endpoint
-- [ ] Logout endpoint
-- [ ] Session-based auth with HttpOnly cookies
-
-### Phase 2: User & Account Baseline
-- [ ] User behavior tracking
-- [ ] Average transaction amount calculation
-- [ ] Background jobs for metrics
-
-### Phase 3: Transaction Ingestion
-- [ ] Transaction creation API
-- [ ] Pagination
-- [ ] Input validation
-- [ ] Immutable transaction records
-
-### Phase 4: Risk Engine
-- [ ] Fraud rule engine
-- [ ] Risk scoring (0-100)
-- [ ] Transaction status assignment (allowed/flagged/blocked)
-- [ ] Fraud flag persistence
-
-### Phase 5: Event-Driven & Async
-- [ ] Background job processing
-- [ ] Event streaming
-- [ ] Idempotent operations
-- [ ] Retry logic
-
-### Phase 6: Audit Logs & Observability
-- [ ] Audit trail
-- [ ] Compliance logging
-- [ ] Admin dashboards
-
-### Phase 7: Security & Abuse Protection
-- [ ] Rate limiting
-- [ ] CSRF hardening
-- [ ] IP/Device tracking
-
-### Phase 8: Tests & Hardening
-- [ ] Request specs
-- [ ] Model specs
-- [ ] Security scan
-- [ ] Code quality checks
-
-## Quick Start
-
-### Prerequisites
+### 1. Clone and Install Dependencies
 ```bash
-Ruby 3.2+
-PostgreSQL 16+
-Redis (for Sidekiq)
-Bundler
-```
-
-### Installation
-
-1. **Clone and setup**
-```bash
-cd /home/aryan/Desktop/fintech-backend
+git clone <repository-url>
+cd fintech-backend
 bundle install
 ```
 
-2. **Configure environment**
+### 2. Database Setup
+Ensure PostgreSQL is running on your system, then execute:
 ```bash
-cp .env.example .env
-# Update .env with your PostgreSQL credentials
+bin/rails db:prepare
+```
+This command creates the database, enables the `pgcrypto` extension for UUIDs, and runs all migrations.
+
+### 3. Environment Variables
+Create a `.env` file in the root directory if you need to override default database settings:
+```env
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_HOST=localhost
 ```
 
-3. **Create databases**
+### 4. Running the Server
 ```bash
-rails db:create
-rails db:migrate
+bin/rails server
+```
+The API will be available at `http://localhost:3000`.
+
+## Core Features
+
+### Real-time Risk Assessment
+Every transaction passes through a multi-rule engine that calculates a risk score based on:
+- **Transaction Amount:** Flags unusually high values.
+- **Spending Baseline:** Detects deviations from user's average behavior.
+- **Velocity:** Monitors rapid-fire transactions within 60-second windows.
+- **Device trust:** Tracks and hashes device signatures (MAC IDs) using SHA-256 for persistent identification.
+
+### Automated Decisioning
+Transactions are automatically categorized:
+- **SUCCESS:** Low risk score (< 30).
+- **FLAGGED:** Medium risk score (30-70).
+- **BLOCKED:** High risk score (> 70).
+
+### User Feedback Loop
+Allows users to provide "Ground Truth" data on fraud decisions (marking them as accurate or inaccurate), enabling future machine learning improvements.
+
+## API Documentation for Frontend Integration
+
+Formal API specifications are located in the `docs/` directory.
+
+### Postman Collection
+For rapid testing and integration, import the Master Collection:
+`postman/MASTER_COLLECTION.json`
+
+## Project Structure
+
+- `app/services/`: Contains `TransactionRiskEvaluator` (Core logic).
+- `app/mailers/`: Handles automated alerts for blocked transactions.
+- `app/controllers/api/v1/`: Versioned API endpoints for Auth, Transactions, and Feedback.
+## System Architecture & Data Flow
+
+The Fintech Risk Engine operates as an asynchronous, multi-layered filtration system. Below is the step-by-step lifecycle of a transaction.
+
+### 1. Ingestion Layer
+- **Endpoint:** `POST /api/v1/transactions`
+- **Identity:** The `current_user` is identified via secure session cookies.
+- **Enrichment:** The server captures the `ip_address` and performs SHA-256 hashing on the `device_id` (MAC/Hardware ID) to maintain privacy while ensuring persistent tracking.
+
+### 2. Risk Evaluation Engine (`TransactionRiskEvaluator`)
+The transaction is passed to the core service which executes five distinct safety rules:
+1.  **First Transaction Check:** Flags if this is the user's first transaction above a specific threshold.
+2.  **Amount Deviation:** Compares the amount against the user's 30-day historical average.
+3.  **Velocity Control:** Checks for unusual transaction volume (rapid-fire attempts) in the last 60 seconds.
+4.  **Device Trust:** Verifies if the hashed `device_id` has been previously used by this user.
+5.  **Device Identity:** Ensures a non-null device identifier is present.
+
+### 3. Decisioning & Persistence
+- Based on the cumulative risk score, a `FraudEvaluation` record is created.
+- **SUCCESS (< 30):** Transaction status remains Success.
+- **FLAGGED (30-70):** Transaction is marked as Flagged for review; backend stats are updated.
+- **BLOCKED (> 70):** Transaction is marked as Blocked; a `403 Forbidden` response is sent.
+
+### 4. Notification & Alerts (Asynchronous)
+- If a transaction is **BLOCKED**, the `TransactionRiskEvaluator` triggers `TransactionMailer.blocked_alert`.
+- This job is pushed to the **SolidQueue Background Worker** (stored in a dedicated PostgreSQL database).
+- The worker sends a secure email alert to the user's registered address.
+
+### 5. Human-in-the-Loop Feedback
+- Users can view their transaction history via `GET /api/v1/transactions`.
+- If a user identifies an error in the risk decision, they submit feedback via `POST /api/v1/transactions/:id/feedback`.
+- This data is used for auditing and refining future risk thresholds.
+
+### 6. Recurring Intelligence
+- **SolidQueue Scheduler:** Runs every Monday at 08:00 AM.
+- **WeeklyReportJob:** Collects 7-day transaction volumes, average spending, and security alert counts.
+- **Delivery:** Generates and sends a comprehensive report to each active user.
+
+## Database Schema Model
+
+```mermaid
+erDiagram
+    USERS ||--o{ TRANSACTIONS : "creates"
+    USERS ||--o{ DEVICES : "uses"
+    USERS ||--o1 USER_TRANSACTION_STATS : "has"
+    TRANSACTIONS ||--o1 FRAUD_EVALUATIONS : "evaluated_by"
+    TRANSACTIONS ||--o{ AUDIT_LOGS : "logs"
 ```
 
-4. **Start Redis (in another terminal)**
+## Running the Multi-DB Setup
+
+In Rails 8, the background job system (SolidQueue) and primary data are separated for performance.
+
 ```bash
-redis-server
+# Initialize both primary and queue databases
+bin/rails db:prepare
 ```
-
-5. **Start Rails server**
-```bash
-rails server -p 3000 -b 0.0.0.0
-```
-
-6. **Start Sidekiq (in another terminal)**
-```bash
-bundle exec sidekiq
-```
-
-### Verify Installation
-
-Test the health endpoint:
-```bash
-curl -s http://localhost:3000/api/v1/health | python3 -m json.tool
-```
-
-Expected response:
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-02-03T10:18:40.201Z",
-  "environment": "development",
-  "database": "connected"
-}
-```
-
-## API Documentation
-
-### Base URL
-```
-http://localhost:3000/api/v1
-```
-
-### Response Format
-All responses follow a standard format:
-```json
-{
-  "status": "success|error",
-  "message": "User-friendly message",
-  "data": {},
-  "error": null
-}
-```
-
-### Current Endpoints (Phase 0)
-
-#### Health Check
-```
-GET /health
-
-Response (200 OK):
-{
-  "status": "ok",
-  "timestamp": "2026-02-03T10:18:40.201Z",
-  "environment": "development",
-  "database": "connected"
-}
-```
-
-## Next Steps
-
-1. ✅ Phase 0: Foundation complete
-2. → **Phase 1: Authentication** - User registration and login
-3. → Phase 2: User profiles and behavior tracking
-4. → Phase 3: Transaction creation
-5. → Phase 4: Risk evaluation engine
-6. → Phase 5: Async processing
-7. → Phase 6: Audit logging
-8. → Phase 7: Security hardening
-9. → Phase 8: Comprehensive testing
-
-## Status
-
-**Phase 0 Complete ✅**
-
-**Last Updated**: February 3, 2026
-
-* Deployment instructions
-
-* ...
