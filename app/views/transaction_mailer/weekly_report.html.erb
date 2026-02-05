@@ -11,7 +11,7 @@
     <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0;">
       <h3>Summary Stats</h3>
       <p><strong>Total Transactions:</strong> <%= @transactions.count %></p>
-      <p><strong>Blocked/Flagged:</strong> <%= @transactions.where.not(status: :success).count %></p>
+      <p><strong>Blocked/Flagged:</strong> <%= @transactions.count { |t| t.status != 'success' } %></p>
       <p><strong>Average Amount:</strong> <%= number_to_currency(@stats.avg_amount) %></p>
     </div>
 
@@ -26,7 +26,7 @@
         </tr>
       </thead>
       <tbody>
-        <% @transactions.order(created_at: :desc).limit(10).each do |txn| %>
+        <% @transactions.sort_by(&:created_at).reverse.first(10).each do |txn| %>
           <tr>
             <td style="padding: 8px; border: 1px solid #dee2e6;"><%= txn.created_at.strftime("%b %d") %></td>
             <td style="padding: 8px; border: 1px solid #dee2e6;"><%= number_to_currency(txn.amount) %></td>

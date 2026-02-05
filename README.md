@@ -10,27 +10,71 @@ A secure, high-performance Ruby on Rails API for real-time transaction processin
 - **Background Jobs:** SolidQueue (Rails 8 defaults)
 - **Security:** bcrypt, SHA-256 device hashing, industry-standard SQL injection protection
 
-## Prerequisites
+## Quick Start for Developers
 
-- Ruby 3.2.0 or higher
-- PostgreSQL 14 or higher
-- Bundler gem
+To get a perfect clone of this backend on your local machine, follow these exact steps:
 
-## Getting Started
+### 1. Prerequisites
+- **Ruby:** `3.2.0+`
+- **PostgreSQL:** `14+` (Make sure your Postgres service is running)
 
-### 1. Clone and Install Dependencies
+### 2. Setup Procedure
 ```bash
+# Clone the repository
 git clone <repository-url>
 cd fintech-backend
-bundle install
-```
 
-### 2. Database Setup
-Ensure PostgreSQL is running on your system, then execute:
-```bash
+# Install dependencies
+bundle install
+
+# Initialize all databases (Primary + Job Queue)
+# This will create your databases and run all migrations
 bin/rails db:prepare
 ```
-This command creates the database, enables the `pgcrypto` extension for UUIDs, and runs all migrations.
+
+### 3. Verify the Installation
+Start the server:
+```bash
+bin/rails server
+```
+The API is now active at `http://localhost:3000`.
+
+---
+
+## Database Inspection Guide
+
+To check the state of your database and verify your data, use these commands:
+
+### A. Find Your Database Names
+Open `config/database.yml`. By default:
+- **Primary Data:** `fintech_development` (Transactions, Users, Evaluations)
+- **Background Jobs:** `fintech_development_queue` (Queue status, Scheduled reports)
+
+### B. List All Tables
+Run this in your terminal to see every table in your primary database:
+```bash
+bin/rails runner "puts ActiveRecord::Base.connection.tables"
+```
+
+### C. View Content (The Easy Way)
+You don't need to know SQL. Use the Rails Runner to print data directly:
+```bash
+# View all Users
+bin/rails runner "User.all.each { |u| p u.attributes }"
+
+# View recent Transactions
+bin/rails runner "Transaction.order(created_at: :desc).limit(5).each { |t| p t.attributes }"
+
+# View Fraud Decisions
+bin/rails runner "FraudEvaluation.all.each { |fe| p fe.attributes }"
+```
+
+### D. Entering the SQL Console
+If you prefer standard SQL, just type:
+```bash
+bin/rails dbconsole
+```
+Inside the prompt, type `\dt` to list tables or `SELECT * FROM users;` to see data. Type `\q` to exit.
 
 ### 3. Environment Variables
 Create a `.env` file in the root directory if you need to override default database settings:
