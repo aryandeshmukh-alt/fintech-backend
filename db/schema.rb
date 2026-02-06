@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_095633) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_04_142000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -46,6 +46,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_095633) do
     t.text "user_feedback"
     t.index ["is_accurate"], name: "index_fraud_evaluations_on_is_accurate"
     t.index ["transaction_id"], name: "index_fraud_evaluations_on_transaction_id"
+  end
+
+  create_table "password_resets", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "expires_at"
+    t.string "token"
+    t.datetime "updated_at", null: false
+    t.datetime "used_at"
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_password_resets_on_user_id"
+  end
+
+  create_table "transaction_notifications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "message", null: false
+    t.string "notification_type", null: false
+    t.boolean "read", default: false
+    t.string "title", null: false
+    t.uuid "transaction_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["read"], name: "index_transaction_notifications_on_read"
+    t.index ["transaction_id"], name: "index_transaction_notifications_on_transaction_id"
+    t.index ["user_id"], name: "index_transaction_notifications_on_user_id"
   end
 
   create_table "transactions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -89,6 +113,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_095633) do
 
   add_foreign_key "devices", "users"
   add_foreign_key "fraud_evaluations", "transactions"
+  add_foreign_key "notifications", "users"
   add_foreign_key "transactions", "users"
   add_foreign_key "user_transaction_stats", "users"
 end

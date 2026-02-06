@@ -53,7 +53,6 @@ class TransactionRiskEvaluator
       add_risk(50, "MISSING_DEVICE_ID")
     end
 
-    # Determine status base on risk score
     # Determine status
     if @risk_score >= 70
       @transaction.blocked!
@@ -74,6 +73,15 @@ class TransactionRiskEvaluator
 
     # Update transaction
     @transaction.update!(status: status, risk_score: @risk_score)
+
+    # Create notification for flagged/blocked transactions
+    if status == :blocked || status == :flagged
+      Notification.create_transaction_notification(
+        user: @user,
+        transaction: @transaction,
+        status: status.to_s.upcase
+      )
+    end
 
     # Audit logging
     AuditLog.create!(
