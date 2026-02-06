@@ -1,82 +1,125 @@
-require 'digest'
-
 module Api
   module V1
     class TransactionsController < ApplicationController
       before_action :authenticate_user!
 
-      # POST /api/v1/transactions
-      def create
-        transaction = current_user.transactions.new(transaction_params)
-        transaction.ip_address = request.remote_ip
-        
-        # Secure Hashing for Device ID (SHA-256)
-        # Using MAC ID or other identifier provided in device_id param
-        device_identifier = params.dig(:transaction, :device_id) || request.user_agent + request.remote_ip
-        transaction.device_id = Digest::SHA256.hexdigest(device_identifier)
-
-        if transaction.save
-          status = TransactionRiskEvaluator.new(transaction).evaluate
-          
-          message = case status
-                   when :success then "Transaction processed successfully"
-                   when :flagged then "Transaction flagged for review"
-                   when :blocked then "Transaction blocked due to high risk"
-                   end
-
-          render_success(serialize_transaction(transaction), message, status == :blocked ? :forbidden : :created)
-        else
-          render_error("Transaction creation failed", :unprocessable_entity, transaction.errors.full_messages)
-        end
-      end
-
       # GET /api/v1/transactions
       def index
-        page = params[:page] || 1
-        per_page = params[:per_page] || 20
+        transactions = current_user.transactions
 
-        transactions = current_user.transactions.order(created_at: :desc).page(page).per(per_page)
-        
-        # Calculate/Fetch stats for efficient frontend
-        stats = current_user.user_transaction_stat
+        # Search filter (searches ID, amount, payment_method)
+        if params[:search].present?
+          search_term = params[:search].to_s.strip
+          transactions = transactions.where(
+            "CAST(id AS TEXT) ILIKE :search OR CAST(amount AS TEXT) ILIKE :search OR payment_method ILIKE :search",
+            search: "%#{search_term}%"
+          )
+        end
+
+        # Date filters
+        if params[:start_date].present?
+          transactions = transactions.where("created_at >= ?", Date.parse(params[:start_date]).beginning_of_day)
+        end
+
+        if params[:end_date].present?
+          transactions = transactions.where("created_at <= ?", Date.parse(params[:end_date]).end_of_day)
+        end
+
+        # Status filter
+        if params[:status].present?
+          transactions = transactions.where(status: params[:status].upcase)
+        end
+
+        # Payment method filter
+        if params[:payment_method].present?
+          transactions = transactions.where(payment_method: params[:payment_method])
+        end
+
+        # Risk score range filter
+        if params[:min_risk_score].present?
+          transactions = transactions.where("risk_score >= ?", params[:min_risk_score].to_i)
+        end
+
+        if params[:max_risk_score].present?
+          transactions = transactions.where("risk_score <= ?", params[:max_risk_score].to_i)
+        end
+
+        # Amount range filter
+        if params[:min_amount].present?
+          transactions = transactions.where("amount >= ?", params[:min_amount].to_f)
+        end
+
+        if params[:max_amount].present?
+          transactions = transactions.where("amount <= ?", params[:max_amount].to_f)
+        end
+
+        # Sorting
+        sort_field = %w[created_at amount risk_score].include?(params[:sort_by]) ? params[:sort_by] : 'created_at'
+        sort_order = params[:sort_order] == 'asc' ? 'asc' : 'desc'
+        transactions = transactions.order("#{sort_field} #{sort_order}")
+
+        # Pagination
+        page = (params[:page] || 1).to_i
+        per_page = [(params[:per_page] || 10).to_i, 100].min
+
+        total_count = transactions.count
+        transactions = transactions.offset((page - 1) * per_page).limit(per_page)
+
+        # User stats
+        user_stats = current_user.user_transaction_stat
 
         render_success({
           transactions: transactions.map { |t| serialize_transaction(t) },
           pagination: {
-            current_page: transactions.current_page,
-            total_pages: transactions.total_pages,
-            total_count: transactions.total_count
+            current_page: page,
+            total_pages: (total_count.to_f / per_page).ceil,
+            total_count: total_count
           },
-          user_stats: stats ? serialize_stats(stats) : nil
+          user_stats: user_stats ? {
+            total_transactions: user_stats.total_txns,
+            total_volume: user_stats.total_amount.to_f,
+            average_spending: user_stats.avg_amount.to_f,
+            last_active: user_stats.last_updated_at
+          } : nil
         })
+      end
+
+      # POST /api/v1/transactions
+      def create
+        transaction = current_user.transactions.new(transaction_params)
+        transaction.ip_address = request.remote_ip
+
+        if transaction.save
+          status = TransactionRiskEvaluator.new(transaction).evaluate
+          transaction.reload
+
+          render_success(
+            serialize_transaction(transaction),
+            "Transaction processed successfully",
+            :created
+          )
+        else
+          render_error("Transaction failed", :unprocessable_entity, transaction.errors.full_messages)
+        end
       end
 
       private
 
       def transaction_params
-        params.require(:transaction).permit(:amount, :device_id, :payment_method)
+        params.require(:transaction).permit(:amount, :payment_method, :device_id)
       end
 
       def serialize_transaction(transaction)
         {
           id: transaction.id,
-          amount: transaction.amount,
+          amount: transaction.amount.to_s,
           payment_method: transaction.payment_method,
-          device_id: transaction.device_id, # This is now the SHA-256 hash
-          status: transaction.status,
+          device_id: transaction.device_id,
+          status: transaction.status.downcase,
           risk_score: transaction.risk_score,
           ip_address: transaction.ip_address,
           created_at: transaction.created_at,
-          rules_triggered: transaction.fraud_evaluation&.rules_triggered
-        }
-      end
-
-      def serialize_stats(stats)
-        {
-          total_transactions: stats.total_txns,
-          total_volume: stats.total_amount,
-          average_spending: stats.avg_amount,
-          last_active: stats.last_updated_at
+          rules_triggered: transaction.fraud_evaluation&.rules_triggered || ""
         }
       end
     end

@@ -4,6 +4,7 @@ class User < ApplicationRecord
   # Associations
   has_many :transactions, dependent: :destroy
   has_many :devices, dependent: :destroy
+  has_many :notifications, dependent: :destroy
   has_one :user_transaction_stat, dependent: :destroy
 
   # Enums
