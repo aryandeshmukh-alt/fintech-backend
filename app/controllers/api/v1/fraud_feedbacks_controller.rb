@@ -6,6 +6,10 @@ module Api
 
       # POST /api/v1/transactions/:transaction_id/feedback
       def create
+        if @evaluation.is_accurate != nil
+          return render_error("Feedback has already been submitted for this transaction", :unprocessable_entity)
+        end
+
         if @evaluation.update(feedback_params)
           render_success(
             serialize_evaluation(@evaluation),

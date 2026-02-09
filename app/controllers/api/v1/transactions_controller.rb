@@ -76,8 +76,8 @@ module Api
             total_count: total_count
           },
           user_stats: user_stats ? {
-            total_transactions: user_stats.total_txns,
-            total_volume: user_stats.total_amount.to_f,
+            total_transactions: current_user.transactions.count,
+            total_volume: current_user.transactions.where(status: %w[SUCCESS FLAGGED]).sum(:amount).to_f,
             average_spending: user_stats.avg_amount.to_f,
             last_active: user_stats.last_updated_at
           } : nil
@@ -119,7 +119,8 @@ module Api
           risk_score: transaction.risk_score,
           ip_address: transaction.ip_address,
           created_at: transaction.created_at,
-          rules_triggered: transaction.fraud_evaluation&.rules_triggered || ""
+          rules_triggered: transaction.fraud_evaluation&.rules_triggered || "",
+          feedback_submitted: transaction.fraud_evaluation&.is_accurate != nil
         }
       end
     end
