@@ -30,13 +30,13 @@ module Api
       # DELETE /api/v1/notifications/:id
       def destroy
         notification = current_user.notifications.find(params[:id])
-        notification.destroy!
+        notification.soft_delete
         render_success(nil, "Notification deleted")
       end
 
       # DELETE /api/v1/notifications
       def destroy_all
-        current_user.notifications.destroy_all
+        current_user.notifications.update_all(deleted_at: Time.current)
         render_success(nil, "All notifications cleared")
       end
 

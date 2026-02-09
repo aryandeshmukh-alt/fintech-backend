@@ -7,9 +7,27 @@ class Notification < ApplicationRecord
   validates :message, presence: true, length: { maximum: 1000 }
   validates :priority, presence: true, inclusion: { in: %w[low medium high] }
 
+  # Soft delete - exclude deleted records by default
+  default_scope { where(deleted_at: nil) }
+
   # Scopes
   scope :unread, -> { where(read: false) }
   scope :recent, -> { order(created_at: :desc) }
+  scope :deleted, -> { unscoped.where.not(deleted_at: nil) }
+  scope :with_deleted, -> { unscoped }
+
+  # Soft delete methods
+  def soft_delete
+    update!(deleted_at: Time.current)
+  end
+
+  def restore
+    update!(deleted_at: nil)
+  end
+
+  def deleted?
+    deleted_at.present?
+  end
   scope :by_priority, -> { order(Arel.sql("CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END")) }
 
   # Class methods
