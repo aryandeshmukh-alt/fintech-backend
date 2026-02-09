@@ -5,7 +5,7 @@ module Api
 
       # GET /api/v1/transactions
       def index
-        transactions = current_user.transactions
+        transactions = current_user.transactions.includes(:fraud_evaluation)
 
         # Search filter (searches ID, amount, payment_method)
         if params[:search].present?

@@ -4,6 +4,10 @@ class ApplicationController < ActionController::API
   # Include cookies for session management
   include ActionController::Cookies
 
+  SESSION_TIMEOUT = 10.minutes
+
+  before_action :check_session_timeout
+
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
   def current_user
@@ -37,6 +41,20 @@ class ApplicationController < ActionController::API
   end
 
   private
+
+  def check_session_timeout
+    if session[:user_id] && session[:last_activity_at]
+      if Time.parse(session[:last_activity_at]) < SESSION_TIMEOUT.ago
+        reset_session
+        render_error("Session expired. Please login again.", :unauthorized, "session_expired")
+      else
+        session[:last_activity_at] = Time.current.iso8601
+      end
+    elsif session[:user_id]
+      # Initialize timeout for existing sessions that don't have it yet
+      session[:last_activity_at] = Time.current.iso8601
+    end
+  end
 
   def user_not_authorized
     render_error("Not authorized", :forbidden, "pundit_unauthorized")
