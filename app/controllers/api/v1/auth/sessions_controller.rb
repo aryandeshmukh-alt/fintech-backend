@@ -9,6 +9,7 @@ module Api
           if user&.authenticate(params[:password])
             if user.active?
               session[:user_id] = user.id
+              session[:last_activity_at] = Time.current.iso8601
               render_success(serialize_user(user), "Logged in successfully")
             else
               render_error("Account is #{user.status}", :forbidden)

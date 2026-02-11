@@ -1,0 +1,21 @@
+one:
+  user: one
+  amount: 100.0
+  payment_method: card
+  status: success
+  risk_score: 10
+  device_id: device_123
+  ip_address: 127.0.0.1
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+two:
+  user: one
+  amount: 500.0
+  payment_method: upi
+  status: flagged
+  risk_score: 45
+  device_id: device_123
+  ip_address: 127.0.0.1
+  created_at: <%= 1.day.ago %>
+  updated_at: <%= 1.day.ago %>

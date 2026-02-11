@@ -1,0 +1,6 @@
+one:
+  user: one
+  avg_amount: 100.0
+  total_amount: 1000.0
+  total_txns: 10
+  last_updated_at: <%= Time.current %>

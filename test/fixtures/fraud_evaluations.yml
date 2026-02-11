@@ -1,0 +1,13 @@
+one:
+  financial_transaction: one
+  risk_score: 10
+  rules_triggered: "LOW_AMOUNT"
+  is_accurate: nil
+  user_feedback: nil
+
+two:
+  financial_transaction: two
+  risk_score: 45
+  rules_triggered: "HIGH_AMOUNT"
+  is_accurate: nil
+  user_feedback: nil

@@ -6,22 +6,35 @@ module Api
 
       # POST /api/v1/transactions/:transaction_id/feedback
       def create
+        # 1. Require params first to trigger 400 if missing
+        feedback_data = feedback_params
+
+        # 2. Check if already submitted
         if @evaluation.is_accurate != nil
           return render_error("Feedback has already been submitted for this transaction", :unprocessable_entity)
         end
 
-        if @evaluation.update(feedback_params)
-          render_success(
-            serialize_evaluation(@evaluation),
-            "Feedback submitted successfully"
-          )
-        else
-          render_error(
-            "Failed to submit feedback",
-            :unprocessable_entity,
-            @evaluation.errors.full_messages
+        ActiveRecord::Base.transaction do
+          @evaluation.update!(feedback_data)
+
+          AuditLog.create!(
+            event_type: "FRAUD_FEEDBACK_SUBMITTED",
+            entity_type: "Transaction",
+            entity_id: @evaluation.transaction_id.to_s,
+            description: "User submitted feedback for transaction: #{@evaluation.is_accurate ? 'Accurate' : 'Inaccurate'}. Feedback: #{@evaluation.user_feedback}"
           )
         end
+
+        render_success(
+          serialize_evaluation(@evaluation),
+          "Feedback submitted successfully"
+        )
+      rescue ActiveRecord::RecordInvalid => e
+        render_error(
+          "Failed to submit feedback",
+          :unprocessable_entity,
+          e.message
+        )
       end
 
       private

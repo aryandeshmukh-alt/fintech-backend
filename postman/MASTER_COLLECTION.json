@@ -239,6 +239,151 @@
                     }
                 }
             ]
+        },
+        {
+            "name": "Analytics",
+            "item": [
+                {
+                    "name": "Get Dashboard Data",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/analytics?period=7d",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "analytics"
+                            ],
+                            "query": [
+                                {
+                                    "key": "period",
+                                    "value": "7d",
+                                    "description": "Options: 7d, 30d, 90d, all"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "all",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "payment_method",
+                                    "value": "all",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "start_date",
+                                    "value": "2026-01-01",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "end_date",
+                                    "value": "2026-02-01",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Returns comprehensive stats, chart data, risk distribution, heatmap, and high risk transactions."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Notifications",
+            "item": [
+                {
+                    "name": "List Notifications",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Mark All as Read",
+                    "request": {
+                        "method": "POST",
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications/mark_all_read",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications",
+                                "mark_all_read"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Mark Specific as Read",
+                    "request": {
+                        "method": "PATCH",
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications/{{notification_id}}/mark_read",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications",
+                                "{{notification_id}}",
+                                "mark_read"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete All Notifications",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications/destroy_all",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications",
+                                "destroy_all"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Specific Notification",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/notifications/{{notification_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "notifications",
+                                "{{notification_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
         }
     ],
     "variable": [

@@ -1,0 +1,4 @@
+one:
+  user: one
+  device_id: device_123
+  first_seen_at: <%= Time.current %>

@@ -7,11 +7,17 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
+<<<<<<< HEAD
     origins "http://localhost:5173",
             "http://localhost:3001",
             "https://fraud-detection-josh.vercel.app",
             ENV.fetch("FRONTEND_URL", "https://your-frontend.vercel.app"),
             %r{\Ahttps://.*\.devtunnels\.ms\z}
+=======
+    origins 'http://localhost:5173', 'http://localhost:3001', 'https://editor.swagger.io'
+    # or allow all during dev:
+    # origins '*'
+>>>>>>> 81fae4db0ce46f56c9a8f9fedd2645dccd561bd1
 
     resource "*",
       headers: :any,

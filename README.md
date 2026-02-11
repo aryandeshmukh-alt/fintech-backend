@@ -32,12 +32,24 @@ bundle install
 bin/rails db:prepare
 ```
 
-### 3. Verify the Installation
-Start the server:
+### 3. Environment Variables
+Create a `.env` file in the root directory if you need to override default database settings:
+```env
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_HOST=localhost
+```
+
+### 4. Running the Server
 ```bash
 bin/rails server
 ```
-The API is now active at `http://localhost:3000`.
+The API will be available at `http://localhost:3000`.
+
+### 5. Verify the Installation
+```bash
+curl http://localhost:3000/api/v1/health
+```
 
 ---
 
@@ -76,19 +88,7 @@ bin/rails dbconsole
 ```
 Inside the prompt, type `\dt` to list tables or `SELECT * FROM users;` to see data. Type `\q` to exit.
 
-### 3. Environment Variables
-Create a `.env` file in the root directory if you need to override default database settings:
-```env
-DATABASE_USER=postgres
-DATABASE_PASSWORD=postgres
-DATABASE_HOST=localhost
-```
-
-### 4. Running the Server
-```bash
-bin/rails server
-```
-The API will be available at `http://localhost:3000`.
+---
 
 ## Core Features
 
@@ -100,13 +100,110 @@ Every transaction passes through a multi-rule engine that calculates a risk scor
 - **Device trust:** Tracks and hashes device signatures (MAC IDs) using SHA-256 for persistent identification.
 
 ### Automated Decisioning
-Transactions are automatically categorized:
-- **SUCCESS:** Low risk score (< 30).
-- **FLAGGED:** Medium risk score (30-70).
-- **BLOCKED:** High risk score (> 70).
+Transactions are automatically categorized based on configurable thresholds defined as constants in `RiskRulesProcessor`:
+- **SUCCESS:** Low risk score (< `FLAGGED_SCORE_THRESHOLD`, default: 30).
+- **FLAGGED:** Medium risk score (`FLAGGED_SCORE_THRESHOLD` to `BLOCKED_SCORE_THRESHOLD`, default: 30–70).
+- **BLOCKED:** High risk score (≥ `BLOCKED_SCORE_THRESHOLD`, default: 70).
 
 ### User Feedback Loop
 Allows users to provide "Ground Truth" data on fraud decisions (marking them as accurate or inaccurate), enabling future machine learning improvements.
+
+---
+
+## System Architecture & Data Flow
+
+The Fintech Risk Engine operates as a multi-layered filtration system with **atomic database transactions** ensuring data integrity. Below is the step-by-step lifecycle of a transaction.
+
+### 1. Ingestion Layer
+- **Endpoint:** `POST /api/v1/transactions`
+- **Identity:** The `current_user` is identified via secure session cookies.
+- **Enrichment:** The server captures the `ip_address` and performs SHA-256 hashing on the `device_id` (MAC/Hardware ID) to maintain privacy while ensuring persistent tracking.
+- **Input Sanitization:** Search queries are sanitized for SQL wildcard characters (`%`, `_`) to prevent unexpected matching behavior.
+
+### 2. Risk Evaluation Engine (Service Architecture)
+
+The evaluation pipeline is split into three focused services for maintainability:
+
+#### `TransactionRiskEvaluator` (Orchestrator)
+- Entry point for the risk evaluation pipeline.
+- Wraps the entire process in an `ActiveRecord::Base.transaction` block to ensure **atomicity** — if any step fails (e.g., AuditLog creation), all database changes are rolled back.
+- Coordinates `RiskRulesProcessor` and `TransactionPostProcessor`.
+
+#### `RiskRulesProcessor` (Business Logic)
+Executes five distinct safety rules, each with **named constants** instead of magic numbers:
+
+| Rule | Constant | Description |
+|------|----------|-------------|
+| First Transaction Check | `HIGH_AMOUNT_LIMIT` (100,000) | Flags first transactions above threshold |
+| Amount Deviation | `DEVIATION_MULTIPLIER_*` (2x/5x/10x) | Compares against user's historical average |
+| Velocity Control | `VELOCITY_WINDOW` (1 minute) | Checks rapid-fire transaction volume |
+| Device Trust | `UNTRUSTED_DEVICE_RISK` (30) | Verifies hashed `device_id` history |
+| Device Identity | `MISSING_DEVICE_RISK` (50) | Ensures non-null device identifier |
+
+#### `TransactionPostProcessor` (Side Effects)
+Handles all database writes and external actions:
+- Creates `FraudEvaluation` record
+- Updates `Transaction` status and risk score
+- Sends email alerts for blocked transactions
+- Creates in-app notifications for flagged/blocked transactions
+- Writes `AuditLog` entry
+- Updates `UserTransactionStat` on successful transactions
+
+### 3. Decisioning & Persistence
+- All database writes use **bang methods** (`create!`, `update!`) to raise exceptions on failure.
+- These exceptions trigger automatic transaction rollback, ensuring data consistency.
+- Based on the cumulative risk score:
+  - **SUCCESS (< 30):** Transaction succeeds; user stats and device records are updated.
+  - **FLAGGED (30–70):** Transaction is marked for review; notification created.
+  - **BLOCKED (≥ 70):** Transaction is blocked; email alert sent via background job.
+
+### 4. Notification & Alerts (Asynchronous)
+- If a transaction is **BLOCKED**, `TransactionMailer.blocked_alert` is enqueued via `deliver_later`.
+- This job is pushed to the **SolidQueue Background Worker** (stored in a dedicated PostgreSQL database).
+- The worker sends a secure email alert to the user's registered address.
+
+### 5. Human-in-the-Loop Feedback
+- Users can view their transaction history via `GET /api/v1/transactions`.
+- If a user identifies an error in the risk decision, they submit feedback via `POST /api/v1/transactions/:id/feedback`.
+- Feedback submission and audit logging are wrapped in a **database transaction** — if the audit log fails, the feedback update is rolled back.
+
+### 6. Recurring Intelligence
+- **SolidQueue Scheduler:** Runs every Monday at 08:00 AM.
+- **WeeklyReportJob:** Collects 7-day transaction volumes, average spending, and security alert counts.
+- **Optimization:** Uses `includes(:user_transaction_stat)` to prevent N+1 queries when processing users.
+- **Delivery:** Generates and sends a comprehensive report to each active user.
+
+---
+
+## Project Structure
+
+```
+app/
+├── controllers/
+│   └── api/v1/
+│       ├── auth/                    # Registration & Session management
+│       ├── analytics_controller.rb  # Dashboard analytics with risk constants
+│       ├── fraud_feedbacks_controller.rb  # User feedback with atomic writes
+│       ├── health_controller.rb     # Health check endpoint
+│       ├── notifications_controller.rb   # In-app notifications (soft delete)
+│       └── transactions_controller.rb    # Transaction CRUD with safe search
+├── jobs/
+│   └── weekly_report_job.rb         # Scheduled weekly reports (N+1 optimized)
+├── mailers/
+│   └── transaction_mailer.rb        # Blocked transaction alerts
+├── models/
+│   ├── audit_log.rb                 # Immutable audit trail
+│   ├── device.rb                    # Trusted device tracking
+│   ├── fraud_evaluation.rb          # Risk evaluation records
+│   ├── notification.rb              # Soft-deletable notifications
+│   ├── transaction.rb               # Financial transactions
+│   ├── user.rb                      # User accounts with bcrypt
+│   └── user_transaction_stat.rb     # Spending baseline stats
+└── services/
+    ├── transaction_risk_evaluator.rb    # Orchestrator (atomic transactions)
+    ├── risk_rules_processor.rb          # Risk scoring with named constants
+    └── transaction_post_processor.rb    # DB writes, notifications, logging
+```
 
 ## API Documentation for Frontend Integration
 
@@ -116,45 +213,18 @@ Formal API specifications are located in the `docs/` directory.
 For rapid testing and integration, import the Master Collection:
 `postman/MASTER_COLLECTION.json`
 
-## Project Structure
+---
 
-- `app/services/`: Contains `TransactionRiskEvaluator` (Core logic).
-- `app/mailers/`: Handles automated alerts for blocked transactions.
-- `app/controllers/api/v1/`: Versioned API endpoints for Auth, Transactions, and Feedback.
-## System Architecture & Data Flow
+## Security Measures
 
-The Fintech Risk Engine operates as an asynchronous, multi-layered filtration system. Below is the step-by-step lifecycle of a transaction.
-
-### 1. Ingestion Layer
-- **Endpoint:** `POST /api/v1/transactions`
-- **Identity:** The `current_user` is identified via secure session cookies.
-- **Enrichment:** The server captures the `ip_address` and performs SHA-256 hashing on the `device_id` (MAC/Hardware ID) to maintain privacy while ensuring persistent tracking.
-
-### 2. Risk Evaluation Engine (`TransactionRiskEvaluator`)
-The transaction is passed to the core service which executes five distinct safety rules:
-1.  **First Transaction Check:** Flags if this is the user's first transaction above a specific threshold.
-2.  **Amount Deviation:** Compares the amount against the user's 30-day historical average.
-3.  **Velocity Control:** Checks for unusual transaction volume (rapid-fire attempts) in the last 60 seconds.
-4.  **Device Trust:** Verifies if the hashed `device_id` has been previously used by this user.
-5.  **Device Identity:** Ensures a non-null device identifier is present.
-
-### 3. Decisioning & Persistence
-- Based on the cumulative risk score, a `FraudEvaluation` record is created.
-- **SUCCESS (< 30):** Transaction status remains Success.
-- **FLAGGED (30-70):** Transaction is marked as Flagged for review; backend stats are updated.
-- **BLOCKED (> 70):** Transaction is marked as Blocked; a `403 Forbidden` response is sent.
-
-### 4. Notification & Alerts (Asynchronous)
-- If a transaction is **BLOCKED**, the `TransactionRiskEvaluator` triggers `TransactionMailer.blocked_alert`.
-- This job is pushed to the **SolidQueue Background Worker** (stored in a dedicated PostgreSQL database).
-- The worker sends a secure email alert to the user's registered address.
-
-### 5. Human-in-the-Loop Feedback
-- Users can view their transaction history via `GET /api/v1/transactions`.
-- If a user identifies an error in the risk decision, they submit feedback via `POST /api/v1/transactions/:id/feedback`.
-- This data is used for auditing and refining future risk thresholds.
-
-### 6. Recurring Intelligence
-- **SolidQueue Scheduler:** Runs every Monday at 08:00 AM.
-- **WeeklyReportJob:** Collects 7-day transaction volumes, average spending, and security alert counts.
-- **Delivery:** Generates and sends a comprehensive report to each active user.
+| Measure | Implementation |
+|---------|---------------|
+| SQL Injection | Parameterized queries throughout; `sanitize_sql_like` for search wildcards |
+| Authentication | Cookie-based sessions with `HttpOnly` and `SameSite` flags |
+| Session Timeout | Configurable timeout (`SESSION_TIMEOUT = 10.minutes`) |
+| Password Storage | bcrypt via `has_secure_password` |
+| Authorization | Scoped queries (`current_user.transactions`) prevent IDOR |
+| Input Validation | Strong params + model validations on all endpoints |
+| Error Handling | `RecordNotFound` and `RecordInvalid` rescued gracefully |
+| Date Parsing | Safe `Date.parse` with fallback to `Date.current` |
+| Data Integrity | `ActiveRecord::Base.transaction` blocks ensure atomic writes |

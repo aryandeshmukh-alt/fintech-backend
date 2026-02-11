@@ -2,18 +2,24 @@ class TransactionRiskEvaluator
   def initialize(transaction)
     @transaction = transaction
     @user = transaction.user
-    @risk_score = 0
-    @triggered_rules = []
   end
 
   def evaluate
-    # 1. Load user spending baseline
-    stats = @user.user_transaction_stat || @user.create_user_transaction_stat
+    # Ensure atomicity: if any step fails (e.g. AuditLog creation), 
+    # all changes (Transaction status, FraudEvaluation) are rolled back.
+    ActiveRecord::Base.transaction do
+      stats = @user.user_transaction_stat || @user.create_user_transaction_stat
 
-    # RULE 1: First transaction safety check
-    if stats.total_txns == 0 && @transaction.amount > 100_000
-      add_risk(30, "FIRST_TRANSACTION_HIGH_AMOUNT")
+      # 1. Processing Risk Rules
+      rule_results = RiskRulesProcessor.new(@transaction, @user, stats).process
+
+      # 2. Post-Evaluation Actions (DB updates, Notifications, Logging)
+      TransactionPostProcessor.new(@transaction, @user, stats, rule_results).process
+
+      # Return the final status
+      rule_results[:status]
     end
+<<<<<<< HEAD
 
     # RULE 2: Amount deviation
     if stats.avg_amount > 0
@@ -127,5 +133,12 @@ class TransactionRiskEvaluator
       device_id: @transaction.device_id,
       first_seen_at: Time.current
     )
+=======
+  rescue ActiveRecord::RecordInvalid => e
+    # Optionally log the error or handle it as needed
+    # Rails transactions automatically roll back on exceptions.
+    Rails.logger.error("Transaction evaluation failed: #{e.message}")
+    raise e
+>>>>>>> 81fae4db0ce46f56c9a8f9fedd2645dccd561bd1
   end
 end
