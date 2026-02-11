@@ -63,13 +63,8 @@ module Api
         transactions = transactions.order("#{sort_field} #{sort_order}")
 
         # Pagination
-<<<<<<< HEAD
-        page = (params[:page] || 1).to_i
-        per_page = [ (params[:per_page] || 10).to_i, 100 ].min
-=======
         page = (params[:page] || DEFAULT_PAGE).to_i
         per_page = [(params[:per_page] || DEFAULT_PER_PAGE).to_i, MAX_PER_PAGE].min
->>>>>>> 81fae4db0ce46f56c9a8f9fedd2645dccd561bd1
 
         total_count = transactions.count
         transactions = transactions.offset((page - 1) * per_page).limit(per_page)

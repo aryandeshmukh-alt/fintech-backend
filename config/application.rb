@@ -31,9 +31,6 @@ module FintechBackend
 
     # Enable cookies and sessions middleware
     config.middleware.use ActionDispatch::Cookies
-<<<<<<< HEAD
-    config.middleware.use ActionDispatch::Session::CookieStore, key: "_fintech_backend_session"
-=======
     config.middleware.use ActionDispatch::Session::CookieStore, key: '_fintech_backend_session'
 
     # SWAGGER TESTING (Use these ONLY if you need to test sessions from online Swagger Editor)
@@ -41,6 +38,5 @@ module FintechBackend
     #   key: '_fintech_backend_session',
     #   same_site: :none,
     #   secure: true
->>>>>>> 81fae4db0ce46f56c9a8f9fedd2645dccd561bd1
   end
 end

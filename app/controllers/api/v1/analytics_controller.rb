@@ -150,17 +150,10 @@ module Api
             count = entry ? entry[:count] : 0
             avg_risk = entry ? entry[:avg_risk] : 0
 
-<<<<<<< HEAD
-            risk_level = if avg_risk >= 50 then "high"
-            elsif avg_risk >= 25 then "medium"
-            else "low"
-            end
-=======
             risk_level = if avg_risk >= RiskRulesProcessor::BLOCKED_SCORE_THRESHOLD then "high"
                          elsif avg_risk >= RiskRulesProcessor::FLAGGED_SCORE_THRESHOLD then "medium"
                          else "low"
                          end
->>>>>>> 81fae4db0ce46f56c9a8f9fedd2645dccd561bd1
 
             data << { day: days[day], hour: hour, value: count, risk_level: risk_level }
           end
