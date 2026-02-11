@@ -3,13 +3,17 @@ module Api
     class TransactionsController < ApplicationController
       before_action :authenticate_user!
 
+      DEFAULT_PAGE = 1
+      DEFAULT_PER_PAGE = 10
+      MAX_PER_PAGE = 100
+
       # GET /api/v1/transactions
       def index
         transactions = current_user.transactions.includes(:fraud_evaluation)
 
         # Search filter (searches ID, amount, payment_method)
         if params[:search].present?
-          search_term = params[:search].to_s.strip
+          search_term = ActiveRecord::Base.sanitize_sql_like(params[:search].to_s.strip)
           transactions = transactions.where(
             "CAST(id AS TEXT) ILIKE :search OR CAST(amount AS TEXT) ILIKE :search OR payment_method ILIKE :search",
             search: "%#{search_term}%"
@@ -18,11 +22,11 @@ module Api
 
         # Date filters
         if params[:start_date].present?
-          transactions = transactions.where("created_at >= ?", Date.parse(params[:start_date]).beginning_of_day)
+          transactions = transactions.where("created_at >= ?", safe_parse_date(params[:start_date]).beginning_of_day)
         end
 
         if params[:end_date].present?
-          transactions = transactions.where("created_at <= ?", Date.parse(params[:end_date]).end_of_day)
+          transactions = transactions.where("created_at <= ?", safe_parse_date(params[:end_date]).end_of_day)
         end
 
         # Status filter
@@ -59,8 +63,8 @@ module Api
         transactions = transactions.order("#{sort_field} #{sort_order}")
 
         # Pagination
-        page = (params[:page] || 1).to_i
-        per_page = [(params[:per_page] || 10).to_i, 100].min
+        page = (params[:page] || DEFAULT_PAGE).to_i
+        per_page = [(params[:per_page] || DEFAULT_PER_PAGE).to_i, MAX_PER_PAGE].min
 
         total_count = transactions.count
         transactions = transactions.offset((page - 1) * per_page).limit(per_page)
@@ -101,12 +105,20 @@ module Api
         else
           render_error("Transaction failed", :unprocessable_entity, transaction.errors.full_messages)
         end
+      rescue ActiveRecord::RecordInvalid => e
+        render_error("Transaction processing failed", :internal_server_error, e.message)
       end
 
       private
 
       def transaction_params
         params.require(:transaction).permit(:amount, :payment_method, :device_id)
+      end
+
+      def safe_parse_date(date_string)
+        Date.parse(date_string)
+      rescue Date::Error
+        Date.current
       end
 
       def serialize_transaction(transaction)

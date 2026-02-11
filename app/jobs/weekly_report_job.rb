@@ -2,7 +2,7 @@ class WeeklyReportJob < ApplicationJob
   queue_as :default
 
   def perform(delivery_method = :deliver_later)
-    User.find_each do |user|
+    User.includes(:user_transaction_stat).find_each do |user|
       start_date = 7.days.ago.beginning_of_day
       end_date = Time.current
       

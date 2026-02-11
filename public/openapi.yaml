@@ -1,0 +1,594 @@
+openapi: 3.0.3
+info:
+  title: Fintech Risk Engine API
+  description: Comprehensive API for user authentication, real-time transaction risk evaluation, analytics, and notification management.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+security:
+  - cookieAuth: []
+
+paths:
+  /api/v1/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account and automatically logs them in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+              properties:
+                user:
+                  type: object
+                  required:
+                    - email
+                    - password
+                    - password_confirmation
+                    - first_name
+                    - last_name
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                      example: user@example.com
+                    password:
+                      type: string
+                      format: password
+                      example: password123
+                    password_confirmation:
+                      type: string
+                      format: password
+                      example: password123
+                    first_name:
+                      type: string
+                      example: John
+                    last_name:
+                      type: string
+                      example: Doe
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Registration failed (Validation errors)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login
+      description: Authenticates a user and starts a session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Returns information about the currently authenticated user.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/logout:
+    delete:
+      tags:
+        - Authentication
+      summary: Logout
+      description: Ends the current user session.
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Logged out successfully
+
+  /api/v1/health:
+    get:
+      tags:
+        - System
+      summary: Health Check
+      description: Verifies the application status and database connectivity.
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/v1/analytics:
+    get:
+      tags:
+        - Analytics
+      summary: Get Transaction Analytics
+      description: Returns aggregated stats, risk distribution, and time-series data for the dashboard.
+      parameters:
+        - in: query
+          name: period
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, all]
+          description: Time range for analytics.
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by transaction status.
+        - in: query
+          name: payment_method
+          schema:
+            type: string
+          description: Filter by payment method.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/AnalyticsData'
+        '401':
+          description: Not authenticated
+
+  /api/v1/transactions:
+    get:
+      tags:
+        - Transactions
+      summary: List Transactions
+      description: Returns a paginated and filtered list of transactions.
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by ID, amount, or payment method.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      transactions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Transaction'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+                      user_stats:
+                        $ref: '#/components/schemas/UserTxnStatsSummary'
+    post:
+      tags:
+        - Transactions
+      summary: Create New Transaction
+      description: Submits a transaction for real-time risk evaluation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transaction
+              properties:
+                transaction:
+                  type: object
+                  required:
+                    - amount
+                    - payment_method
+                    - device_id
+                  properties:
+                    amount:
+                      type: number
+                      example: 500.0
+                    payment_method:
+                      type: string
+                      example: card
+                    device_id:
+                      type: string
+                      example: web_browser_123
+            examples:
+              standard:
+                summary: Standard Transaction
+                value:
+                  transaction:
+                    amount: 500.0
+                    payment_method: card
+                    device_id: device_123
+              high_value:
+                summary: High Value Transaction (Triggers Risk)
+                value:
+                  transaction:
+                    amount: 150000.0
+                    payment_method: bank_transfer
+                    device_id: device_unknown
+      responses:
+        '201':
+          description: Transaction processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '422':
+          description: Validation error
+
+  /api/v1/transactions/{id}/feedback:
+    post:
+      tags:
+        - Transactions
+      summary: Submit Fraud Feedback
+      description: Allows users to report if a risk evaluation was accurate or not.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: UUID of the transaction.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - feedback
+              properties:
+                feedback:
+                  type: object
+                  required:
+                    - is_accurate
+                  properties:
+                    is_accurate:
+                      type: boolean
+                      example: false
+                    user_feedback:
+                      type: string
+                      example: "I did not recognize this transaction."
+      responses:
+        '200':
+          description: Feedback submitted
+        '422':
+          description: Feedback already submitted or invalid
+
+  /api/v1/notifications:
+    get:
+      tags:
+        - Notifications
+      summary: List Notifications
+      description: Returns the latest 50 notifications for the user.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      notifications:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Notification'
+                      unread_count:
+                        type: integer
+
+  /api/v1/notifications/mark_all_read:
+    post:
+      tags:
+        - Notifications
+      summary: Mark all as read
+      responses:
+        '200':
+          description: Success
+
+  /api/v1/notifications/destroy_all:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete all notifications
+      responses:
+        '200':
+          description: Success
+
+  /api/v1/notifications/{id}/mark_read:
+    patch:
+      tags:
+        - Notifications
+      summary: Mark specific notification as read
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+
+  /api/v1/notifications/{id}:
+    delete:
+      tags:
+        - Notifications
+      summary: Delete specific notification
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: _fintech_backend_session
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Success
+        data:
+          $ref: '#/components/schemas/User'
+    
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        first_name:
+          type: string
+          example: John
+        last_name:
+          type: string
+          example: Doe
+        role:
+          type: string
+          example: customer
+        status:
+          type: string
+          example: active
+    
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        amount:
+          type: string
+          example: "500.0"
+        payment_method:
+          type: string
+          example: card
+        status:
+          type: string
+          example: success
+        risk_score:
+          type: integer
+          example: 10
+        rules_triggered:
+          type: string
+          example: "FIRST_TRANSACTION_LOW_VAL"
+        created_at:
+          type: string
+          format: date-time
+    
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    AnalyticsData:
+      type: object
+      properties:
+        stats:
+          type: object
+          properties:
+            total_transactions:
+              type: integer
+            successful_transactions:
+              type: integer
+            flagged_transactions:
+              type: integer
+            blocked_transactions:
+              type: integer
+            total_volume:
+              type: number
+            average_spending:
+              type: number
+            success_rate:
+              type: number
+            risk_rate:
+              type: number
+            avg_risk_score:
+              type: number
+        chart_data:
+          type: array
+          items:
+            type: object
+        risk_distribution:
+          type: array
+          items:
+            type: object
+        rules_triggered:
+          type: object
+          description: Hash of rule names and their trigger counts
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+        environment:
+          type: string
+          example: development
+        database:
+          type: string
+          example: connected
+
+    Pagination:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        total_pages:
+          type: integer
+        total_count:
+          type: integer
+
+    UserTxnStatsSummary:
+      type: object
+      properties:
+        total_transactions:
+          type: integer
+        total_volume:
+          type: number
+        average_spending:
+          type: number
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Something went wrong
+        data:
+          type: array
+          items:
+            type: string
+          example: ["Email is invalid"]
+        error:
+          type: string
+          example: unprocessable_entity

@@ -27,8 +27,8 @@ module Api
         if params[:start_date].present? && params[:end_date].present?
           transactions = transactions.where(
             "transactions.created_at >= ? AND transactions.created_at <= ?",
-            Date.parse(params[:start_date]).beginning_of_day,
-            Date.parse(params[:end_date]).end_of_day
+            safe_parse_date(params[:start_date]).beginning_of_day,
+            safe_parse_date(params[:end_date]).end_of_day
           )
         elsif params[:period].present?
           days = parse_period(params[:period])
@@ -50,7 +50,7 @@ module Api
 
       def calculated_days
         if params[:start_date].present? && params[:end_date].present?
-          (Date.parse(params[:end_date]) - Date.parse(params[:start_date])).to_i + 1
+          (safe_parse_date(params[:end_date]) - safe_parse_date(params[:start_date])).to_i + 1
         else
           parse_period(params[:period])
         end
@@ -74,7 +74,7 @@ module Api
         total_volume = transactions.where(status: [:success, :flagged]).sum(:amount).to_f
         average_spending = total > 0 ? (total_volume / total).round(2) : 0
         avg_risk_score = total > 0 ? transactions.average(:risk_score).to_f.round(1) : 0
-        high_risk_count = transactions.where("risk_score >= 70").count
+        high_risk_count = transactions.where("risk_score >= ?", RiskRulesProcessor::BLOCKED_SCORE_THRESHOLD).count
 
         {
           total_transactions: total,
@@ -113,9 +113,9 @@ module Api
       end
 
       def build_risk_distribution(transactions)
-        low = transactions.where("risk_score < 30").count
-        medium = transactions.where("risk_score >= 30 AND risk_score < 70").count
-        high = transactions.where("risk_score >= 70").count
+        low = transactions.where("risk_score < ?", RiskRulesProcessor::FLAGGED_SCORE_THRESHOLD).count
+        medium = transactions.where("risk_score >= ? AND risk_score < ?", RiskRulesProcessor::FLAGGED_SCORE_THRESHOLD, RiskRulesProcessor::BLOCKED_SCORE_THRESHOLD).count
+        high = transactions.where("risk_score >= ?", RiskRulesProcessor::BLOCKED_SCORE_THRESHOLD).count
 
         [
           { name: "Low Risk", value: low, color: "#22c55e" },
@@ -150,8 +150,8 @@ module Api
             count = entry ? entry[:count] : 0
             avg_risk = entry ? entry[:avg_risk] : 0
 
-            risk_level = if avg_risk >= 50 then "high"
-                         elsif avg_risk >= 25 then "medium"
+            risk_level = if avg_risk >= RiskRulesProcessor::BLOCKED_SCORE_THRESHOLD then "high"
+                         elsif avg_risk >= RiskRulesProcessor::FLAGGED_SCORE_THRESHOLD then "medium"
                          else "low"
                          end
 
@@ -192,7 +192,7 @@ module Api
 
       def build_high_risk_transactions(transactions)
         transactions
-          .where("risk_score >= 50")
+          .where("risk_score >= ?", RiskRulesProcessor::FLAGGED_SCORE_THRESHOLD)
           .order(risk_score: :desc)
           .limit(5)
           .map do |t|
@@ -204,6 +204,12 @@ module Api
               risk_score: t.risk_score
             }
           end
+      end
+
+      def safe_parse_date(date_string)
+        Date.parse(date_string)
+      rescue Date::Error
+        Date.current
       end
     end
   end

@@ -4,9 +4,11 @@ module Api
       before_action :authenticate_user!
       before_action :set_notification, only: [:mark_read]
 
+      MAX_NOTIFICATIONS = 50
+
       # GET /api/v1/notifications
       def index
-        notifications = current_user.notifications.recent.limit(50)
+        notifications = current_user.notifications.recent.limit(MAX_NOTIFICATIONS)
         unread_count = current_user.notifications.unread.count
 
         render_success({
@@ -19,6 +21,8 @@ module Api
       def mark_read
         @notification.update!(read: true)
         render_success(serialize_notification(@notification), "Notification marked as read")
+      rescue ActiveRecord::RecordInvalid => e
+        render_error("Failed to mark notification as read", :unprocessable_entity, e.message)
       end
 
       # POST /api/v1/notifications/mark_all_read
@@ -32,6 +36,8 @@ module Api
         notification = current_user.notifications.find(params[:id])
         notification.soft_delete
         render_success(nil, "Notification deleted")
+      rescue ActiveRecord::RecordNotFound
+        render_error("Notification not found", :not_found)
       end
 
       # DELETE /api/v1/notifications
