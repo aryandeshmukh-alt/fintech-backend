@@ -1,6 +1,6 @@
 class ApplicationController < ActionController::API
   include Pundit::Authorization
-  
+
   # Include cookies for session management
   include ActionController::Cookies
 
@@ -42,4 +42,3 @@ class ApplicationController < ActionController::API
     render_error("Not authorized", :forbidden, "pundit_unauthorized")
   end
 end
-

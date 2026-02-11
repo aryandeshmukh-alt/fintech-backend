@@ -68,7 +68,7 @@ class TransactionRiskEvaluator
     FraudEvaluation.create!(
       financial_transaction: @transaction,
       risk_score: @risk_score,
-      rules_triggered: @triggered_rules.join(',')
+      rules_triggered: @triggered_rules.join(",")
     )
 
     # Update transaction
@@ -86,7 +86,7 @@ class TransactionRiskEvaluator
     # Audit logging
     AuditLog.create!(
       event_type: "TRANSACTION_#{status.upcase}",
-      entity_type: 'Transaction',
+      entity_type: "Transaction",
       entity_id: @transaction.id,
       description: "Triggered rules: #{@triggered_rules.join(',')}"
     )

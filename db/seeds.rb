@@ -34,22 +34,22 @@ users = users_data.map do |data|
     status: :active
   )
   puts "Created user: #{user.email} (Pattern: #{data[:pattern]})"
-  
+
   # Set up persistent device for normal behavior
   trusted_device_id = Digest::SHA256.hexdigest("trusted_device_#{user.id}")
-  
+
   # Add some initial normal transactions to establish a baseline
   3.times do |i|
     txn = user.transactions.create!(
       amount: rand(100..1000),
-      payment_method: [:card, :upi].sample,
+      payment_method: [ :card, :upi ].sample,
       status: :pending,
       device_id: trusted_device_id,
       ip_address: "192.168.1.#{10 + i}"
     )
     TransactionRiskEvaluator.new(txn).evaluate
   end
-  
+
   { user: user, trusted_device_id: trusted_device_id, pattern: data[:pattern] }
 end
 
@@ -57,7 +57,7 @@ end
 users.each do |data|
   user = data[:user]
   trusted_device_id = data[:trusted_device_id]
-  
+
   case data[:pattern]
   when :mostly_success
     # Normal spending
@@ -122,7 +122,7 @@ users.each do |data|
 
   when :all_scenarios
     # A mix of everything
-    [500, 20000, 150000].each_with_index do |amt, i|
+    [ 500, 20000, 150000 ].each_with_index do |amt, i|
       txn = user.transactions.create!(
         amount: amt,
         payment_method: :upi,

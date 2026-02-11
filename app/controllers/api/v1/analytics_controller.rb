@@ -71,7 +71,7 @@ module Api
         success_count = transactions.where(status: :success).count
         flagged_count = transactions.where(status: :flagged).count
         blocked_count = transactions.where(status: :blocked).count
-        total_volume = transactions.where(status: [:success, :flagged]).sum(:amount).to_f
+        total_volume = transactions.where(status: [ :success, :flagged ]).sum(:amount).to_f
         average_spending = total > 0 ? (total_volume / total).round(2) : 0
         avg_risk_score = total > 0 ? transactions.average(:risk_score).to_f.round(1) : 0
         high_risk_count = transactions.where("risk_score >= 70").count
@@ -101,13 +101,13 @@ module Api
 
           {
             date: date.strftime("%b %d"),
-            success: grouped[[date, "success"]] || 0,
-            flagged: grouped[[date, "flagged"]] || 0,
-            blocked: grouped[[date, "blocked"]] || 0,
-            total: (grouped[[date, "success"]] || 0) +
-                   (grouped[[date, "flagged"]] || 0) +
-                   (grouped[[date, "blocked"]] || 0) +
-                   (grouped[[date, "pending"]] || 0)
+            success: grouped[[ date, "success" ]] || 0,
+            flagged: grouped[[ date, "flagged" ]] || 0,
+            blocked: grouped[[ date, "blocked" ]] || 0,
+            total: (grouped[[ date, "success" ]] || 0) +
+                   (grouped[[ date, "flagged" ]] || 0) +
+                   (grouped[[ date, "blocked" ]] || 0) +
+                   (grouped[[ date, "pending" ]] || 0)
           }
         end.reverse
       end
@@ -138,7 +138,7 @@ module Api
         # Index results for fast lookup
         lookup = {}
         grouped.each do |row|
-          lookup[[row.dow, row.hour_of_day]] = { count: row.txn_count, avg_risk: row.avg_risk.to_f }
+          lookup[[ row.dow, row.hour_of_day ]] = { count: row.txn_count, avg_risk: row.avg_risk.to_f }
         end
 
         days = %w[Sun Mon Tue Wed Thu Fri Sat]
@@ -146,14 +146,14 @@ module Api
 
         7.times do |day|
           24.times do |hour|
-            entry = lookup[[day, hour]]
+            entry = lookup[[ day, hour ]]
             count = entry ? entry[:count] : 0
             avg_risk = entry ? entry[:avg_risk] : 0
 
             risk_level = if avg_risk >= 50 then "high"
-                         elsif avg_risk >= 25 then "medium"
-                         else "low"
-                         end
+            elsif avg_risk >= 25 then "medium"
+            else "low"
+            end
 
             data << { day: days[day], hour: hour, value: count, risk_level: risk_level }
           end
@@ -176,7 +176,7 @@ module Api
         rules_counts = Hash.new(0)
 
         transactions.joins(:fraud_evaluation)
-          .where.not(fraud_evaluations: { rules_triggered: [nil, ""] })
+          .where.not(fraud_evaluations: { rules_triggered: [ nil, "" ] })
           .pluck("fraud_evaluations.rules_triggered")
           .each do |rules_str|
             rules_str.split(",").map(&:strip).reject(&:empty?).each do |rule|

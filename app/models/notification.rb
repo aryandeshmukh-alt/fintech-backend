@@ -37,13 +37,13 @@ class Notification < ApplicationRecord
     formatted_amount = ActiveSupport::NumberHelper.number_to_delimited(amount.to_i)
 
     case status.to_s.upcase
-    when 'BLOCKED'
+    when "BLOCKED"
       create!(
         user: user,
-        notification_type: 'security',
-        title: 'Transaction Blocked',
+        notification_type: "security",
+        title: "Transaction Blocked",
         message: "A transaction of ₹#{formatted_amount} was blocked due to high risk (Score: #{risk_score}).",
-        priority: 'high',
+        priority: "high",
         data: {
           transaction_id: transaction.id,
           amount: amount,
@@ -51,13 +51,13 @@ class Notification < ApplicationRecord
           status: status
         }
       )
-    when 'FLAGGED'
+    when "FLAGGED"
       create!(
         user: user,
-        notification_type: 'transaction',
-        title: 'Transaction Flagged',
+        notification_type: "transaction",
+        title: "Transaction Flagged",
         message: "A transaction of ₹#{formatted_amount} was flagged for review (Score: #{risk_score}).",
-        priority: 'medium',
+        priority: "medium",
         data: {
           transaction_id: transaction.id,
           amount: amount,

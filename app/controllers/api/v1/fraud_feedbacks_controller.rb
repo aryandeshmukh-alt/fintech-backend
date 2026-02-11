@@ -30,7 +30,7 @@ module Api
         # Ensure user can only feedback on their own transactions
         transaction = current_user.transactions.find(params[:transaction_id])
         @evaluation = transaction.fraud_evaluation
-        
+
         render_error("No evaluation found for this transaction", :not_found) unless @evaluation
       rescue ActiveRecord::RecordNotFound
         render_error("Transaction not found", :not_found)

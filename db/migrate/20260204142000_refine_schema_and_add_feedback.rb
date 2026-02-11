@@ -6,7 +6,7 @@ class RefineSchemaAndAddFeedback < ActiveRecord::Migration[8.1]
     # 2. Enhancement: Add feedback columns for Option A
     add_column :fraud_evaluations, :is_accurate, :boolean
     add_column :fraud_evaluations, :user_feedback, :text
-    
+
     # 3. Add index for feedback analysis
     add_index :fraud_evaluations, :is_accurate
   end

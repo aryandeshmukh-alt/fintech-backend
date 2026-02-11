@@ -54,13 +54,13 @@ module Api
         end
 
         # Sorting
-        sort_field = %w[created_at amount risk_score].include?(params[:sort_by]) ? params[:sort_by] : 'created_at'
-        sort_order = params[:sort_order] == 'asc' ? 'asc' : 'desc'
+        sort_field = %w[created_at amount risk_score].include?(params[:sort_by]) ? params[:sort_by] : "created_at"
+        sort_order = params[:sort_order] == "asc" ? "asc" : "desc"
         transactions = transactions.order("#{sort_field} #{sort_order}")
 
         # Pagination
         page = (params[:page] || 1).to_i
-        per_page = [(params[:per_page] || 10).to_i, 100].min
+        per_page = [ (params[:per_page] || 10).to_i, 100 ].min
 
         total_count = transactions.count
         transactions = transactions.offset((page - 1) * per_page).limit(per_page)

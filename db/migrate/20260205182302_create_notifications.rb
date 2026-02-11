@@ -8,11 +8,11 @@ class CreateNotifications <ActiveRecord::Migration[8.1]
       t.string :priority, null: false, default: 'low'
       t.boolean :read, null: false, default: false
       t.jsonb :data, default: {}
-      
+
       t.timestamps
     end
 
-    add_index :notifications, [:user_id, :read]
-    add_index :notifications, [:user_id, :created_at]
+    add_index :notifications, [ :user_id, :read ]
+    add_index :notifications, [ :user_id, :created_at ]
   end
 end

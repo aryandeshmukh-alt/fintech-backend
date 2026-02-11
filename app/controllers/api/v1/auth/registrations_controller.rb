@@ -9,7 +9,7 @@ module Api
           if user.save
             # Set session immediately after registration
             session[:user_id] = user.id
-            
+
             render_success(
               serialize_user(user),
               "User registered successfully",

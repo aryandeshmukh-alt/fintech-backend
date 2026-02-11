@@ -12,11 +12,11 @@ class User < ApplicationRecord
   enum :status, { active: 0, suspended: 1, pending: 2 }, default: :active
 
   # Validations
-  validates :email, presence: true, 
-                    uniqueness: { case_sensitive: false }, 
+  validates :email, presence: true,
+                    uniqueness: { case_sensitive: false },
                     format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :password, presence: true, 
-                       length: { minimum: 8 }, 
+  validates :password, presence: true,
+                       length: { minimum: 8 },
                        if: -> { new_record? || password.present? }
   validates :first_name, :last_name, presence: true
 

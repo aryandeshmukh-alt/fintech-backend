@@ -1,5 +1,5 @@
 class TransactionMailer < ApplicationMailer
-  default from: 'notifications@fintech-risk-engine.com'
+  default from: "notifications@fintech-risk-engine.com"
 
   def blocked_alert(transaction)
     @transaction = transaction

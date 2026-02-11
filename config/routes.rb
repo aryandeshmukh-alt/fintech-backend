@@ -14,11 +14,11 @@ Rails.application.routes.draw do
 
       get "analytics", to: "analytics#show"
 
-      resources :transactions, only: [:index, :create] do
-        post 'feedback', to: 'fraud_feedbacks#create'
+      resources :transactions, only: [ :index, :create ] do
+        post "feedback", to: "fraud_feedbacks#create"
       end
 
-      resources :notifications, only: [:index, :destroy] do
+      resources :notifications, only: [ :index, :destroy ] do
         member do
           patch :mark_read
         end

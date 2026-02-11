@@ -7,14 +7,16 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins 'http://localhost:5173', 'http://localhost:3001'
-    # or allow all during dev:
-    # origins '*'
+    origins "http://localhost:5173",
+            "http://localhost:3001",
+            "https://fraud-detection-josh.vercel.app",
+            ENV.fetch("FRONTEND_URL", "https://your-frontend.vercel.app"),
+            %r{\Ahttps://.*\.devtunnels\.ms\z}
 
-    resource '*',
+    resource "*",
       headers: :any,
       methods: %i[get post put patch delete options head],
-      expose: ['Authorization'],
+      expose: [ "Authorization" ],
       credentials: true
   end
 end

@@ -44,9 +44,6 @@ gem "rack-attack", "~> 6.6"
 # Environment variables
 gem "dotenv-rails", "~> 2.8"
 
-# Async job processing
-gem "sidekiq", "~> 7.0"
-
 # Pagination
 gem "kaminari", "~> 1.2"
 

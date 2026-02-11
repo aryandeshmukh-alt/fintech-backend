@@ -6,7 +6,7 @@ class DropUnusedTables < ActiveRecord::Migration[8.1]
   end
 
   def down
-    # No easy way to restore dropped tables without definitions, 
+    # No easy way to restore dropped tables without definitions,
     # but since they are unused we can leave this empty or raise IrreversibleMigration
     raise ActiveRecord::IrreversibleMigration
   end
