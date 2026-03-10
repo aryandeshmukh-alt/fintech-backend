@@ -57,7 +57,7 @@ group :development, :test do
   # Testing
   gem "rspec-rails", "~> 6.0"
   gem "factory_bot_rails", "~> 6.2"
-  gem "faker", "~> 3.2"
+  gem "faker", "~> 3.6"
 
   # Audits gems for known security defects (use config/bundler-audit.yml to ignore issues)
   gem "bundler-audit", require: false
